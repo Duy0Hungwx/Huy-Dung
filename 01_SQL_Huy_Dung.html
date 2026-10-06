@@ -1,0 +1,1190 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>01_SQL_Huy_Dung.ipynb</title><style>*{box-sizing:border-box}body{margin:0;background:#f1eee7;color:#253b42;font:16px/1.7 Segoe UI,Arial,sans-serif}main{max-width:1080px;margin:32px auto;background:#fffdf8;padding:48px;border-top:10px solid #264653;box-shadow:0 8px 30px #263b4210}h1{font-size:36px;line-height:1.25;margin:12px 0 20px;color:#264653}h2{margin-top:40px;border-bottom:1px solid #d8caaa;padding-bottom:10px}h3{margin-top:24px}.eyebrow{letter-spacing:2px;font-size:13px;font-weight:700;color:#996c24}.note{border-left:4px solid #b57625;background:#f8efd9;padding:16px 20px}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0}.card{background:#eaf0ec;padding:20px}.card strong{display:block;font-size:28px;color:#264653}.dataframe{width:100%;border-collapse:collapse;font-size:13px;margin:18px 0}.dataframe th{background:#264653;color:#fff;text-align:left}.dataframe th,.dataframe td{padding:10px;border-bottom:1px solid #e1dccd}.scroll{overflow-x:auto}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#eeeee8;padding:18px;font-size:13px}code{background:#efeee8;padding:2px 4px}figure{margin:30px 0}img{max-width:100%;display:block;margin:auto;height:auto}figcaption{font-size:13px;color:#5f6e6c;text-align:center;margin-top:8px}.code-cell{border-top:1px solid #d6dbd4;margin-top:26px}details{border:1px solid #d6dbd4;padding:12px;margin:12px 0}summary{cursor:pointer;font-weight:600}a{color:#28676f}@media(max-width:700px){main{margin:0;padding:22px}h1{font-size:28px}.cards{grid-template-columns:1fr}}@media print{body{background:white}main{margin:0;box-shadow:none;padding:20px}figure,.card{break-inside:avoid}}</style></head><body><main><h1>Huy Dung · ADY201m · Lưu trữ và khai thác dữ liệu SQL</h1>
+<p>Phiên bản HD-2026. Phương án SQLite thay IBM Cloud được sử dụng theo thông tin giảng viên đã chấp nhận.
+Dữ liệu gốc được giữ nguyên tuổi theo ngày. Cơ sở dữ liệu lưu bền vững và có khóa chính ID.
+13 truy vấn bắt buộc giữ cùng ngữ nghĩa với đề; phần bổ sung tổng hợp theo nhóm tuổi và mã giới tính.
+Các nhóm giới hạn 10 dòng có thứ tự xác định; tỷ lệ của các nhóm này chỉ mô tả hồ sơ được truy vấn.</p>
+<section class="code-cell"><p>Cell 1</p><pre>from pathlib import Path
+import json, sqlite3
+import pandas as pd
+from IPython.display import display
+from sqlite_storage import open_cardio_database
+ROOT=Path.cwd()
+raw=pd.read_csv(ROOT/&#x27;data/cardio_train_raw.csv&#x27;,sep=&#x27;;&#x27;)
+database_path=ROOT/&#x27;data/cardio_train.sqlite&#x27;
+connection,created=open_cardio_database(raw,database_path,ROOT/&#x27;sql/01_schema.sql&#x27;)
+print(&#x27;Tệp SQLite:&#x27;,database_path.name,&#x27;; tạo mới:&#x27;,created)
+print(&#x27;Số dòng:&#x27;,connection.execute(&#x27;SELECT COUNT(*) FROM CARDIO_TRAIN&#x27;).fetchone()[0])
+query_log=[]</pre><pre>Tệp SQLite: cardio_train.sqlite ; tạo mới: True
+Số dòng: 70000
+</pre></section><h2>Q01. Tổng số hồ sơ</h2>
+<pre><code class="language-sql">SELECT COUNT(*) AS TOTAL_ROWS FROM CARDIO_TRAIN;
+</code></pre>
+<section class="code-cell"><p>Cell 2</p><pre>result=pd.read_sql_query(&#x27;SELECT COUNT(*) AS TOTAL_ROWS FROM CARDIO_TRAIN&#x27;,connection)
+display(result)
+query_log.append({&#x27;query&#x27;:&#x27;Q01&#x27;,&#x27;result_rows&#x27;:len(result),&#x27;disease_rate&#x27;:float(result.CARDIO.mean()) if &#x27;CARDIO&#x27; in result else None})
+result.to_csv(ROOT/&#x27;results/sql_Q01.csv&#x27;,index=False)</pre><div class="scroll"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>TOTAL_ROWS</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>70000</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></section><h2>Q02. Số người mắc bệnh</h2>
+<pre><code class="language-sql">SELECT COUNT(*) AS DISEASE_CASES FROM CARDIO_TRAIN WHERE CARDIO=1;
+</code></pre>
+<section class="code-cell"><p>Cell 3</p><pre>result=pd.read_sql_query(&#x27;SELECT COUNT(*) AS DISEASE_CASES FROM CARDIO_TRAIN WHERE CARDIO=1&#x27;,connection)
+display(result)
+query_log.append({&#x27;query&#x27;:&#x27;Q02&#x27;,&#x27;result_rows&#x27;:len(result),&#x27;disease_rate&#x27;:float(result.CARDIO.mean()) if &#x27;CARDIO&#x27; in result else None})
+result.to_csv(ROOT/&#x27;results/sql_Q02.csv&#x27;,index=False)</pre><div class="scroll"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>DISEASE_CASES</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>34979</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></section><h2>Q03. Số người theo giới tính</h2>
+<pre><code class="language-sql">SELECT GENDER, COUNT(*) AS PEOPLE FROM CARDIO_TRAIN GROUP BY GENDER ORDER BY GENDER;
+</code></pre>
+<section class="code-cell"><p>Cell 4</p><pre>result=pd.read_sql_query(&#x27;SELECT GENDER, COUNT(*) AS PEOPLE FROM CARDIO_TRAIN GROUP BY GENDER ORDER BY GENDER&#x27;,connection)
+display(result)
+query_log.append({&#x27;query&#x27;:&#x27;Q03&#x27;,&#x27;result_rows&#x27;:len(result),&#x27;disease_rate&#x27;:float(result.CARDIO.mean()) if &#x27;CARDIO&#x27; in result else None})
+result.to_csv(ROOT/&#x27;results/sql_Q03.csv&#x27;,index=False)</pre><div class="scroll"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>GENDER</th>
+      <th>PEOPLE</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>45530</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>24470</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></section><h2>Q04. 10 người có AP_HI cao nhất</h2>
+<pre><code class="language-sql">SELECT ID, AP_HI, CARDIO FROM CARDIO_TRAIN ORDER BY AP_HI DESC, ID ASC LIMIT 10;
+</code></pre>
+<section class="code-cell"><p>Cell 5</p><pre>result=pd.read_sql_query(&#x27;SELECT ID, AP_HI, CARDIO FROM CARDIO_TRAIN ORDER BY AP_HI DESC, ID ASC LIMIT 10&#x27;,connection)
+display(result)
+query_log.append({&#x27;query&#x27;:&#x27;Q04&#x27;,&#x27;result_rows&#x27;:len(result),&#x27;disease_rate&#x27;:float(result.CARDIO.mean()) if &#x27;CARDIO&#x27; in result else None})
+result.to_csv(ROOT/&#x27;results/sql_Q04.csv&#x27;,index=False)</pre><div class="scroll"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ID</th>
+      <th>AP_HI</th>
+      <th>CARDIO</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>58374</td>
+      <td>16020</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>36339</td>
+      <td>14020</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>36414</td>
+      <td>14020</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>66998</td>
+      <td>14020</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>67502</td>
+      <td>14020</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>79116</td>
+      <td>13010</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>79679</td>
+      <td>13010</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>11089</td>
+      <td>11500</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>73356</td>
+      <td>11020</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>99089</td>
+      <td>2000</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></section><h2>Q05. 10 người có cân nặng trên trung bình</h2>
+<pre><code class="language-sql">SELECT ID, WEIGHT, CARDIO FROM CARDIO_TRAIN WHERE WEIGHT&gt;(SELECT AVG(WEIGHT) FROM CARDIO_TRAIN) ORDER BY WEIGHT DESC, ID ASC LIMIT 10;
+</code></pre>
+<section class="code-cell"><p>Cell 6</p><pre>result=pd.read_sql_query(&#x27;SELECT ID, WEIGHT, CARDIO FROM CARDIO_TRAIN WHERE WEIGHT&gt;(SELECT AVG(WEIGHT) FROM CARDIO_TRAIN) ORDER BY WEIGHT DESC, ID ASC LIMIT 10&#x27;,connection)
+display(result)
+query_log.append({&#x27;query&#x27;:&#x27;Q05&#x27;,&#x27;result_rows&#x27;:len(result),&#x27;disease_rate&#x27;:float(result.CARDIO.mean()) if &#x27;CARDIO&#x27; in result else None})
+result.to_csv(ROOT/&#x27;results/sql_Q05.csv&#x27;,index=False)</pre><div class="scroll"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ID</th>
+      <th>WEIGHT</th>
+      <th>CARDIO</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>618</td>
+      <td>200.0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>71945</td>
+      <td>200.0</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>87498</td>
+      <td>183.0</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>52564</td>
+      <td>181.0</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>6716</td>
+      <td>180.0</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>64829</td>
+      <td>180.0</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>86506</td>
+      <td>180.0</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>87612</td>
+      <td>180.0</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>28683</td>
+      <td>178.0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>39156</td>
+      <td>178.0</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></section><h2>Q06. 10 người có đường huyết cao</h2>
+<pre><code class="language-sql">SELECT ID, GLUC, CARDIO FROM CARDIO_TRAIN WHERE GLUC&gt;1 ORDER BY ID ASC LIMIT 10;
+</code></pre>
+<section class="code-cell"><p>Cell 7</p><pre>result=pd.read_sql_query(&#x27;SELECT ID, GLUC, CARDIO FROM CARDIO_TRAIN WHERE GLUC&gt;1 ORDER BY ID ASC LIMIT 10&#x27;,connection)
+display(result)
+query_log.append({&#x27;query&#x27;:&#x27;Q06&#x27;,&#x27;result_rows&#x27;:len(result),&#x27;disease_rate&#x27;:float(result.CARDIO.mean()) if &#x27;CARDIO&#x27; in result else None})
+result.to_csv(ROOT/&#x27;results/sql_Q06.csv&#x27;,index=False)</pre><div class="scroll"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ID</th>
+      <th>GLUC</th>
+      <th>CARDIO</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>8</td>
+      <td>2</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>12</td>
+      <td>3</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>27</td>
+      <td>3</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>32</td>
+      <td>2</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>40</td>
+      <td>3</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>68</td>
+      <td>3</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>71</td>
+      <td>2</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>92</td>
+      <td>2</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>103</td>
+      <td>2</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>117</td>
+      <td>2</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></section><h2>Q07. 10 người lớn tuổi nhất</h2>
+<pre><code class="language-sql">SELECT ID, CAST(AGE/365 AS INTEGER) AS AGE_YEARS, CARDIO FROM CARDIO_TRAIN ORDER BY AGE DESC, ID ASC LIMIT 10;
+</code></pre>
+<section class="code-cell"><p>Cell 8</p><pre>result=pd.read_sql_query(&#x27;SELECT ID, CAST(AGE/365 AS INTEGER) AS AGE_YEARS, CARDIO FROM CARDIO_TRAIN ORDER BY AGE DESC, ID ASC LIMIT 10&#x27;,connection)
+display(result)
+query_log.append({&#x27;query&#x27;:&#x27;Q07&#x27;,&#x27;result_rows&#x27;:len(result),&#x27;disease_rate&#x27;:float(result.CARDIO.mean()) if &#x27;CARDIO&#x27; in result else None})
+result.to_csv(ROOT/&#x27;results/sql_Q07.csv&#x27;,index=False)</pre><div class="scroll"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ID</th>
+      <th>AGE_YEARS</th>
+      <th>CARDIO</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>81643</td>
+      <td>64</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>97124</td>
+      <td>64</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>72373</td>
+      <td>64</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>29892</td>
+      <td>64</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>52297</td>
+      <td>64</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>53805</td>
+      <td>64</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>57321</td>
+      <td>64</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>98749</td>
+      <td>64</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>25799</td>
+      <td>64</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>82562</td>
+      <td>64</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></section><h2>Q08. 10 người có cholesterol mức 3</h2>
+<pre><code class="language-sql">SELECT ID, CHOLESTEROL, CARDIO FROM CARDIO_TRAIN WHERE CHOLESTEROL=3 ORDER BY ID ASC LIMIT 10;
+</code></pre>
+<section class="code-cell"><p>Cell 9</p><pre>result=pd.read_sql_query(&#x27;SELECT ID, CHOLESTEROL, CARDIO FROM CARDIO_TRAIN WHERE CHOLESTEROL=3 ORDER BY ID ASC LIMIT 10&#x27;,connection)
+display(result)
+query_log.append({&#x27;query&#x27;:&#x27;Q08&#x27;,&#x27;result_rows&#x27;:len(result),&#x27;disease_rate&#x27;:float(result.CARDIO.mean()) if &#x27;CARDIO&#x27; in result else None})
+result.to_csv(ROOT/&#x27;results/sql_Q08.csv&#x27;,index=False)</pre><div class="scroll"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ID</th>
+      <th>CHOLESTEROL</th>
+      <th>CARDIO</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>3</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2</td>
+      <td>3</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>9</td>
+      <td>3</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>12</td>
+      <td>3</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>35</td>
+      <td>3</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>42</td>
+      <td>3</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>43</td>
+      <td>3</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>46</td>
+      <td>3</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>59</td>
+      <td>3</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>68</td>
+      <td>3</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></section><h2>Q09. 10 người hút thuốc</h2>
+<pre><code class="language-sql">SELECT ID, SMOKE, CARDIO FROM CARDIO_TRAIN WHERE SMOKE=1 ORDER BY ID ASC LIMIT 10;
+</code></pre>
+<section class="code-cell"><p>Cell 10</p><pre>result=pd.read_sql_query(&#x27;SELECT ID, SMOKE, CARDIO FROM CARDIO_TRAIN WHERE SMOKE=1 ORDER BY ID ASC LIMIT 10&#x27;,connection)
+display(result)
+query_log.append({&#x27;query&#x27;:&#x27;Q09&#x27;,&#x27;result_rows&#x27;:len(result),&#x27;disease_rate&#x27;:float(result.CARDIO.mean()) if &#x27;CARDIO&#x27; in result else None})
+result.to_csv(ROOT/&#x27;results/sql_Q09.csv&#x27;,index=False)</pre><div class="scroll"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ID</th>
+      <th>SMOKE</th>
+      <th>CARDIO</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>23</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>29</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>52</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>73</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>74</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>90</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>138</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>140</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>142</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>166</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></section><h2>Q10. 10 người có vận động</h2>
+<pre><code class="language-sql">SELECT ID, ACTIVE, CARDIO FROM CARDIO_TRAIN WHERE ACTIVE=1 ORDER BY ID ASC LIMIT 10;
+</code></pre>
+<section class="code-cell"><p>Cell 11</p><pre>result=pd.read_sql_query(&#x27;SELECT ID, ACTIVE, CARDIO FROM CARDIO_TRAIN WHERE ACTIVE=1 ORDER BY ID ASC LIMIT 10&#x27;,connection)
+display(result)
+query_log.append({&#x27;query&#x27;:&#x27;Q10&#x27;,&#x27;result_rows&#x27;:len(result),&#x27;disease_rate&#x27;:float(result.CARDIO.mean()) if &#x27;CARDIO&#x27; in result else None})
+result.to_csv(ROOT/&#x27;results/sql_Q10.csv&#x27;,index=False)</pre><div class="scroll"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ID</th>
+      <th>ACTIVE</th>
+      <th>CARDIO</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>1</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>3</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>9</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>12</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>13</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>15</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>16</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>21</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>23</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></section><h2>Q11. 10 người có AP_LO thấp nhất</h2>
+<pre><code class="language-sql">SELECT ID, AP_LO, CARDIO FROM CARDIO_TRAIN ORDER BY AP_LO ASC, ID ASC LIMIT 10;
+</code></pre>
+<section class="code-cell"><p>Cell 12</p><pre>result=pd.read_sql_query(&#x27;SELECT ID, AP_LO, CARDIO FROM CARDIO_TRAIN ORDER BY AP_LO ASC, ID ASC LIMIT 10&#x27;,connection)
+display(result)
+query_log.append({&#x27;query&#x27;:&#x27;Q11&#x27;,&#x27;result_rows&#x27;:len(result),&#x27;disease_rate&#x27;:float(result.CARDIO.mean()) if &#x27;CARDIO&#x27; in result else None})
+result.to_csv(ROOT/&#x27;results/sql_Q11.csv&#x27;,index=False)</pre><div class="scroll"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ID</th>
+      <th>AP_LO</th>
+      <th>CARDIO</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>85816</td>
+      <td>-70</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2845</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>19258</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>23512</td>
+      <td>0</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>24837</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>32749</td>
+      <td>0</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>34120</td>
+      <td>0</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>36325</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>39577</td>
+      <td>0</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>45400</td>
+      <td>0</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></section><h2>Q12. 10 người uống rượu</h2>
+<pre><code class="language-sql">SELECT ID, ALCO, CARDIO FROM CARDIO_TRAIN WHERE ALCO=1 ORDER BY ID ASC LIMIT 10;
+</code></pre>
+<section class="code-cell"><p>Cell 13</p><pre>result=pd.read_sql_query(&#x27;SELECT ID, ALCO, CARDIO FROM CARDIO_TRAIN WHERE ALCO=1 ORDER BY ID ASC LIMIT 10&#x27;,connection)
+display(result)
+query_log.append({&#x27;query&#x27;:&#x27;Q12&#x27;,&#x27;result_rows&#x27;:len(result),&#x27;disease_rate&#x27;:float(result.CARDIO.mean()) if &#x27;CARDIO&#x27; in result else None})
+result.to_csv(ROOT/&#x27;results/sql_Q12.csv&#x27;,index=False)</pre><div class="scroll"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ID</th>
+      <th>ALCO</th>
+      <th>CARDIO</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>23</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>81</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>134</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>136</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>142</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>180</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>199</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>213</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>240</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>318</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></section><h2>Q13. Xem dữ liệu và đổi tuổi sang năm</h2>
+<pre><code class="language-sql">SELECT ID, AGE AS AGE_DAYS, CAST(AGE/365 AS INTEGER) AS AGE_YEARS, GENDER, CARDIO FROM CARDIO_TRAIN ORDER BY ID ASC LIMIT 10;
+</code></pre>
+<section class="code-cell"><p>Cell 14</p><pre>result=pd.read_sql_query(&#x27;SELECT ID, AGE AS AGE_DAYS, CAST(AGE/365 AS INTEGER) AS AGE_YEARS, GENDER, CARDIO FROM CARDIO_TRAIN ORDER BY ID ASC LIMIT 10&#x27;,connection)
+display(result)
+query_log.append({&#x27;query&#x27;:&#x27;Q13&#x27;,&#x27;result_rows&#x27;:len(result),&#x27;disease_rate&#x27;:float(result.CARDIO.mean()) if &#x27;CARDIO&#x27; in result else None})
+result.to_csv(ROOT/&#x27;results/sql_Q13.csv&#x27;,index=False)</pre><div class="scroll"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ID</th>
+      <th>AGE_DAYS</th>
+      <th>AGE_YEARS</th>
+      <th>GENDER</th>
+      <th>CARDIO</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0</td>
+      <td>18393</td>
+      <td>50</td>
+      <td>2</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>1</td>
+      <td>20228</td>
+      <td>55</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2</td>
+      <td>18857</td>
+      <td>51</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>3</td>
+      <td>17623</td>
+      <td>48</td>
+      <td>2</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>4</td>
+      <td>17474</td>
+      <td>47</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>8</td>
+      <td>21914</td>
+      <td>60</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>9</td>
+      <td>22113</td>
+      <td>60</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>12</td>
+      <td>22584</td>
+      <td>61</td>
+      <td>2</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>13</td>
+      <td>17668</td>
+      <td>48</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>14</td>
+      <td>19834</td>
+      <td>54</td>
+      <td>1</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></section><h2>Tổng hợp bổ sung và kiểm tra lưu trữ</h2>
+<p>AGE/365 trong SQLite dùng phép chia nguyên cho cột AGE kiểu INTEGER. Phần tổng hợp không lọc 10 hồ sơ.
+Sau xuất CSV, kết nối được đóng và tệp được mở lại để kiểm tra tính toàn vẹn và tổng số bản ghi.</p>
+<section class="code-cell"><p>Cell 15</p><pre>supplement=pd.read_sql_query((ROOT/&#x27;sql/03_age_gender_summary.sql&#x27;).read_text(encoding=&#x27;utf-8&#x27;),connection)
+display(supplement); supplement.to_csv(ROOT/&#x27;results/sql_age_gender.csv&#x27;,index=False)
+exported=pd.read_sql_query(&#x27;SELECT * FROM CARDIO_TRAIN ORDER BY ID&#x27;,connection)
+exported.to_csv(ROOT/&#x27;data/CARDIO_TRAIN_export.csv&#x27;,index=False)
+pd.DataFrame(query_log).to_csv(ROOT/&#x27;results/query_summary.csv&#x27;,index=False)
+connection.close()
+with sqlite3.connect(database_path) as reopened:
+    count,cases=reopened.execute(&#x27;SELECT COUNT(*),SUM(CARDIO) FROM CARDIO_TRAIN&#x27;).fetchone()
+    integrity=reopened.execute(&#x27;PRAGMA integrity_check&#x27;).fetchone()[0]
+assert (count,cases,integrity)==(70000,34979,&#x27;ok&#x27;)
+status={&#x27;engine&#x27;:&#x27;SQLite&#x27;,&#x27;author&#x27;:&#x27;Huy Dung&#x27;,&#x27;variant&#x27;:&#x27;HD-2026&#x27;,&#x27;persistent&#x27;:True,&#x27;rows&#x27;:count,
+        &#x27;disease_cases&#x27;:cases,&#x27;required_queries&#x27;:13,&#x27;supplementary_queries&#x27;:1,
+        &#x27;reopen_verified&#x27;:True,&#x27;integrity_check&#x27;:integrity,&#x27;cloud_executed&#x27;:False,&#x27;github_uploaded&#x27;:False}
+(ROOT/&#x27;results/db_execution_status.json&#x27;).write_text(json.dumps(status,indent=2),encoding=&#x27;utf-8&#x27;)
+display(status)</pre><div class="scroll"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>AGE_GROUP</th>
+      <th>GENDER</th>
+      <th>RECORDS</th>
+      <th>CASES</th>
+      <th>CASE_PERCENT</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>40-49</td>
+      <td>1</td>
+      <td>12196</td>
+      <td>4434</td>
+      <td>36.36</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>40-49</td>
+      <td>2</td>
+      <td>7429</td>
+      <td>3014</td>
+      <td>40.57</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>50-59</td>
+      <td>1</td>
+      <td>23848</td>
+      <td>12211</td>
+      <td>51.20</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>50-59</td>
+      <td>2</td>
+      <td>11693</td>
+      <td>6144</td>
+      <td>52.54</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>60+</td>
+      <td>1</td>
+      <td>8377</td>
+      <td>5716</td>
+      <td>68.23</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>60+</td>
+      <td>2</td>
+      <td>4673</td>
+      <td>3028</td>
+      <td>64.80</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>&lt;40</td>
+      <td>1</td>
+      <td>1109</td>
+      <td>255</td>
+      <td>22.99</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>&lt;40</td>
+      <td>2</td>
+      <td>675</td>
+      <td>177</td>
+      <td>26.22</td>
+    </tr>
+  </tbody>
+</table>
+</div></div><pre>{&#x27;engine&#x27;: &#x27;SQLite&#x27;,
+ &#x27;author&#x27;: &#x27;Huy Dung&#x27;,
+ &#x27;variant&#x27;: &#x27;HD-2026&#x27;,
+ &#x27;persistent&#x27;: True,
+ &#x27;rows&#x27;: 70000,
+ &#x27;disease_cases&#x27;: 34979,
+ &#x27;required_queries&#x27;: 13,
+ &#x27;supplementary_queries&#x27;: 1,
+ &#x27;reopen_verified&#x27;: True,
+ &#x27;integrity_check&#x27;: &#x27;ok&#x27;,
+ &#x27;cloud_executed&#x27;: False,
+ &#x27;github_uploaded&#x27;: False}</pre></section></main></body></html>

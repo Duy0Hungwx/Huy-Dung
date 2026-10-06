@@ -1,0 +1,14 @@
+{
+  "engine": "SQLite",
+  "author": "Huy Dung",
+  "variant": "HD-2026",
+  "persistent": true,
+  "rows": 70000,
+  "disease_cases": 34979,
+  "required_queries": 13,
+  "supplementary_queries": 1,
+  "reopen_verified": true,
+  "integrity_check": "ok",
+  "cloud_executed": false,
+  "github_uploaded": false
+}

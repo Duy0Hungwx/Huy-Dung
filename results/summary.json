@@ -1,0 +1,65 @@
+{
+  "author": "Huy Dung",
+  "variant": "HD-2026",
+  "seed": 2026,
+  "quality": {
+    "rows": 70000,
+    "columns": 13,
+    "unique_ids": 70000,
+    "missing_values": 0,
+    "duplicate_feature_target_rows": 3208,
+    "disease_cases": 34979,
+    "disease_rate": 0.4997
+  },
+  "selected_model": "RandomForest tuned (F1 CV)",
+  "selected_test_metrics": {
+    "accuracy": 0.7342857142857143,
+    "precision": 0.7542951769819913,
+    "recall": 0.6944920907185058,
+    "f1": 0.7231593570152808,
+    "roc_auc": 0.8009640619928002,
+    "balanced_accuracy": 0.7342629880586627,
+    "average_precision": 0.7840922508485119,
+    "fit_evaluate_seconds": 1.0135749999972177
+  },
+  "cv_f1": 0.7227417916717978,
+  "cv_folds": 5,
+  "selection_metric": "f1",
+  "best_params": {
+    "model__max_depth": 16,
+    "model__min_samples_leaf": 12
+  },
+  "confusion_matrix": [
+    [
+      8132,
+      2374
+    ],
+    [
+      3206,
+      7288
+    ]
+  ],
+  "brier_score": 0.18067777711188487,
+  "train_rows": 49000,
+  "test_rows": 21000,
+  "train_iqr_lower": [
+    90.0,
+    65.0
+  ],
+  "train_iqr_upper": [
+    170.0,
+    105.0
+  ],
+  "cloud_executed": false,
+  "github_uploaded": false,
+  "execution_mode": "local_with_persistent_sqlite",
+  "versions": {
+    "numpy": "2.2.6",
+    "pandas": "2.2.3",
+    "scipy": "1.15.3",
+    "scikit-learn": "1.7.2",
+    "statsmodels": "0.14.5",
+    "matplotlib": "3.10.7",
+    "seaborn": "0.13.2"
+  }
+}

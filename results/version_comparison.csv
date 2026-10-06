@@ -1,0 +1,14 @@
+Tiêu chí,Bản trước,Huy Dung · HD-2026
+Nguồn và SQL bắt buộc,70.000 hồ sơ; 13 truy vấn,Cùng nguồn; 13 truy vấn + tổng hợp tuổi–giới tính
+Seed chia train/test,42,2026
+Kích thước train/test,49.000 / 21.000,49.000 / 21.000
+Gia đình mô hình tinh chỉnh,Gradient Boosting,Random Forest
+Tiêu chí chọn cấu hình,Accuracy,F1
+Cross-validation của GridSearch,3 fold,5 fold
+Lưới tìm kiếm,"8 cấu hình: số cây, learning rate, độ sâu","4 cấu hình: độ sâu, kích thước lá; 200 cây"
+CV của Stacking,3 fold,5 fold
+Phân tích bổ sung,"Các biểu đồ theo đề, feature importance","Wilson theo tuổi, ROC/PR, reliability, Brier, sai số giới tính"
+Tập test giao nhau,"6,329 hồ sơ","6,329 hồ sơ; 14,671 ID chỉ có ở test HD-2026"
+Accuracy mô hình chọn,73.04%,73.43%
+F1 mô hình chọn,72.17%,72.32%
+Nhãn phiên bản,Bản Hoàng Phúc,Huy Dung · HD-2026

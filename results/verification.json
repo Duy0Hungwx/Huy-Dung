@@ -1,0 +1,14 @@
+{
+  "notebooks_executed": 2,
+  "model_reload_rows_verified": 21000,
+  "model_labels_exact": true,
+  "model_probabilities_match": true,
+  "sql_required_outputs_verified": 13,
+  "database_integrity": "ok",
+  "source_csv_same_as_original": true,
+  "new_test_ids": 14671,
+  "shared_test_ids": 6329,
+  "train_test_disjoint": true,
+  "cloud_executed": false,
+  "github_uploaded": false
+}
